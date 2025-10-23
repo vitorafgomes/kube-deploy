@@ -15,26 +15,56 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout main branch
         uses: actions/checkout@v4
         with:
+          ref: main
           fetch-depth: 0
-
-      - name: Configure Git
-        run: |
-          git config user.name "$GITHUB_ACTOR"
-          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
 
       - name: Install Helm
         uses: azure/setup-helm@v4
         with:
           version: 'latest'
 
-      - name: Run chart-releaser
-        uses: helm/chart-releaser-action@v1.6.0
-        env:
-          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+      - name: Package Helm Chart
+        run: |
+          helm package .
+
+      - name: Checkout gh-pages branch
+        uses: actions/checkout@v4
         with:
-          charts_dir: .
-          skip_packaging: false
-          mark_as_latest: true
+          ref: gh-pages
+          path: gh-pages
+
+      - name: Update Helm Repository
+        run: |
+          # Create gh-pages directory if it doesn't exist
+          mkdir -p gh-pages
+
+          # Copy the packaged chart to gh-pages
+          cp *.tgz gh-pages/ 2>/dev/null || true
+
+          # Update the index
+          helm repo index gh-pages --url https://vitorafgomes.github.io/kube-deploy
+
+          # Configure git
+          cd gh-pages
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Add and commit
+          git add .
+          git commit -m "Update Helm chart repository" || exit 0
+          git push origin gh-pages
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: 'gh-pages'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
