@@ -1,0 +1,23 @@
+apiVersion: v1
+entries:
+  kube-deploy:
+  - apiVersion: v2
+    appVersion: 1.0.0
+    created: "2025-10-23T21:17:41.647273437Z"
+    description: A Helm chart for Kubernetes deployment automation
+    digest: 3afe5d2034dd7c46bda3d0c2ce8504857542eb00e83a052f6ec420a8d7b35cd7
+    keywords:
+    - kubernetes
+    - deployment
+    - automation
+    maintainers:
+    - email: vitorafgomes@users.noreply.github.com
+      name: Vitor Gomes
+    name: kube-deploy
+    sources:
+    - https://github.com/vitorafgomes/kube-deploy
+    type: application
+    urls:
+    - https://vitorafgomes.github.io/kube-deploy/kube-deploy-0.1.0.tgz
+    version: 0.1.0
+generated: "2025-10-23T21:17:41.645845648Z"
