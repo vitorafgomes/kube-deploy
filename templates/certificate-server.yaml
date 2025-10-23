@@ -1,0 +1,27 @@
+{{- if .Values.mtls.enabled }}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ include "kube-deploy.fullname" . }}-server
+  labels:
+    {{- include "kube-deploy.labels" . | nindent 4 }}
+spec:
+  secretName: {{ include "kube-deploy.fullname" . }}-server-tls
+  commonName: {{ .Values.mtls.server.commonName }}
+  {{- with .Values.mtls.server.dnsNames }}
+  dnsNames:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.mtls.server.ipAddresses }}
+  ipAddresses:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  issuerRef:
+    name: {{ include "kube-deploy.fullname" . }}-ca-issuer
+    kind: Issuer
+  duration: {{ .Values.mtls.server.duration }}
+  renewBefore: {{ .Values.mtls.server.renewBefore }}
+  usages:
+    - server auth
+    - client auth
+{{- end }}

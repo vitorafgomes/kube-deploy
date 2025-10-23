@@ -4,12 +4,32 @@ metadata:
   name: {{ include "kube-deploy.fullname" . }}
   labels:
     {{- include "kube-deploy.labels" . | nindent 4 }}
+    {{- if .Values.monitoring.enabled }}
+    {{- with .Values.monitoring.serviceMonitor.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+    {{- end }}
 spec:
   type: {{ .Values.service.type }}
+  {{- if .Values.service.sessionAffinity }}
+  sessionAffinity: {{ .Values.service.sessionAffinity }}
+  {{- end }}
   ports:
     - port: {{ .Values.service.port }}
-      targetPort: http
+      targetPort: {{ .Values.service.targetPort | default "http" }}
       protocol: TCP
       name: http
+    {{- if .Values.service.metricsPort }}
+    - port: {{ .Values.service.metricsPort }}
+      targetPort: {{ .Values.service.metricsPort }}
+      protocol: TCP
+      name: metrics
+    {{- end }}
+    {{- if .Values.mtls.enabled }}
+    - port: {{ .Values.mtls.servicePort }}
+      targetPort: {{ .Values.mtls.containerPort }}
+      protocol: TCP
+      name: https
+    {{- end }}
   selector:
     {{- include "kube-deploy.selectorLabels" . | nindent 4 }}

@@ -1,0 +1,18 @@
+{{- if .Values.mtls.enabled }}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ include "kube-deploy.fullname" . }}-client
+  labels:
+    {{- include "kube-deploy.labels" . | nindent 4 }}
+spec:
+  secretName: {{ include "kube-deploy.fullname" . }}-client-tls
+  commonName: {{ .Values.mtls.client.commonName }}
+  issuerRef:
+    name: {{ include "kube-deploy.fullname" . }}-ca-issuer
+    kind: Issuer
+  duration: {{ .Values.mtls.client.duration }}
+  renewBefore: {{ .Values.mtls.client.renewBefore }}
+  usages:
+    - client auth
+{{- end }}

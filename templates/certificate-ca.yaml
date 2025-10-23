@@ -1,0 +1,17 @@
+{{- if .Values.mtls.enabled }}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ include "kube-deploy.fullname" . }}-ca
+  labels:
+    {{- include "kube-deploy.labels" . | nindent 4 }}
+spec:
+  secretName: {{ include "kube-deploy.fullname" . }}-ca-tls
+  commonName: {{ .Values.mtls.ca.commonName }}
+  isCA: true
+  issuerRef:
+    name: {{ .Values.mtls.ca.issuerName }}
+    kind: {{ .Values.mtls.ca.issuerKind }}
+  duration: {{ .Values.mtls.ca.duration }}
+  renewBefore: {{ .Values.mtls.ca.renewBefore }}
+{{- end }}

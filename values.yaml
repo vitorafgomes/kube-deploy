@@ -36,22 +36,25 @@ securityContext: {}
 service:
   type: ClusterIP
   port: 80
+  targetPort: 80
+  # metricsPort: 8080  # Optional metrics port
+  # sessionAffinity: None  # Optional session affinity
 
-ingress:
+# Gateway/HTTPRoute configuration (optional)
+gateway:
   enabled: false
-  className: ""
   annotations: {}
-    # kubernetes.io/ingress.class: nginx
-    # kubernetes.io/tls-acme: "true"
-  hosts:
-    - host: chart-example.local
-      paths:
-        - path: /
-          pathType: ImplementationSpecific
-  tls: []
-  #  - secretName: chart-example-tls
-  #    hosts:
-  #      - chart-example.local
+  parentRefs: []
+    # - name: traefik-gateway
+    #   namespace: traefik
+    #   sectionName: websecure
+  hostnames: []
+    # - "example.com"
+  rules: []
+    # - matches:
+    #     - path:
+    #         type: PathPrefix
+    #         value: /
 
 resources: {}
   # limits:
@@ -80,8 +83,83 @@ autoscaling:
 volumes: []
 volumeMounts: []
 
+# ConfigMap configuration (optional)
+configMap:
+  enabled: false
+  data: {}
+    # Example:
+    # ASPNETCORE_ENVIRONMENT: "Production"
+    # DATABASE_HOST: "postgres.default.svc.cluster.local"
+    # RABBITMQ_HOST: "rabbitmq.default.svc.cluster.local"
+
+# Additional environment variables (optional)
+env: []
+  # Example:
+  # - name: MY_ENV_VAR
+  #   value: "my-value"
+  # - name: SECRET_VALUE
+  #   valueFrom:
+  #     secretKeyRef:
+  #       name: my-secret
+  #       key: password
+
 nodeSelector: {}
 
 tolerations: []
 
 affinity: {}
+
+# Monitoring Configuration (optional)
+monitoring:
+  enabled: false
+  serviceMonitor:
+    enabled: false
+    interval: 30s
+    scrapeTimeout: 10s
+    path: /metrics
+    labels: {}
+      # release: kps
+
+# mTLS Configuration (optional)
+mtls:
+  enabled: false
+  containerPort: 8443
+  servicePort: 443
+
+  ca:
+    commonName: "Root CA"
+    issuerName: selfsigned-issuer
+    issuerKind: ClusterIssuer
+    duration: 87600h  # 10 years
+    renewBefore: 8760h  # 1 year
+
+  server:
+    commonName: "server"
+    dnsNames: []
+      # - service.namespace.svc.cluster.local
+    ipAddresses: []
+    duration: 2160h  # 90 days
+    renewBefore: 720h  # 30 days
+
+  client:
+    commonName: "client"
+    duration: 2160h  # 90 days
+    renewBefore: 720h  # 30 days
+
+# Health Check Configuration (optional)
+healthCheck:
+  liveness:
+    enabled: false
+    path: /health/live
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+
+  readiness:
+    enabled: false
+    path: /health/ready
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    timeoutSeconds: 5
+    failureThreshold: 3

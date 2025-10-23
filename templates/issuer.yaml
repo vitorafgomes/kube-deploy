@@ -1,0 +1,11 @@
+{{- if .Values.mtls.enabled }}
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: {{ include "kube-deploy.fullname" . }}-ca-issuer
+  labels:
+    {{- include "kube-deploy.labels" . | nindent 4 }}
+spec:
+  ca:
+    secretName: {{ include "kube-deploy.fullname" . }}-ca-tls
+{{- end }}
