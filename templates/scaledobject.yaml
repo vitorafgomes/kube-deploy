@@ -1,0 +1,58 @@
+{{- if .Values.keda.enabled }}
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: {{ include "kube-deploy.fullname" . }}
+  labels:
+    {{- include "kube-deploy.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    name: {{ include "kube-deploy.fullname" . }}
+  {{- with .Values.keda.pollingInterval }}
+  pollingInterval: {{ . }}
+  {{- end }}
+  {{- with .Values.keda.cooldownPeriod }}
+  cooldownPeriod: {{ . }}
+  {{- end }}
+  {{- with .Values.keda.idleReplicaCount }}
+  idleReplicaCount: {{ . }}
+  {{- end }}
+  minReplicaCount: {{ .Values.keda.minReplicaCount | default 0 }}
+  maxReplicaCount: {{ .Values.keda.maxReplicaCount | default 10 }}
+  {{- if .Values.keda.fallback }}
+  fallback:
+    failureThreshold: {{ .Values.keda.fallback.failureThreshold | default 3 }}
+    replicas: {{ .Values.keda.fallback.replicas | default 1 }}
+  {{- end }}
+  {{- if .Values.keda.advanced }}
+  advanced:
+    {{- if .Values.keda.advanced.restoreToOriginalReplicaCount }}
+    restoreToOriginalReplicaCount: {{ .Values.keda.advanced.restoreToOriginalReplicaCount }}
+    {{- end }}
+    {{- if .Values.keda.advanced.horizontalPodAutoscalerConfig }}
+    horizontalPodAutoscalerConfig:
+      {{- if .Values.keda.advanced.horizontalPodAutoscalerConfig.name }}
+      name: {{ .Values.keda.advanced.horizontalPodAutoscalerConfig.name }}
+      {{- end }}
+      {{- if .Values.keda.advanced.horizontalPodAutoscalerConfig.behavior }}
+      behavior:
+        {{- toYaml .Values.keda.advanced.horizontalPodAutoscalerConfig.behavior | nindent 8 }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+  triggers:
+    {{- if .Values.keda.triggers }}
+    {{- range .Values.keda.triggers }}
+    - type: {{ .type }}
+      {{- if .authenticationRef }}
+      authenticationRef:
+        name: {{ .authenticationRef.name | default (printf "%s-trigger-auth" (include "kube-deploy.fullname" $)) }}
+        {{- if .authenticationRef.kind }}
+        kind: {{ .authenticationRef.kind }}
+        {{- end }}
+      {{- end }}
+      metadata:
+        {{- toYaml .metadata | nindent 8 }}
+    {{- end }}
+    {{- end }}
+{{- end }}

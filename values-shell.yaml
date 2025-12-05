@@ -1,0 +1,162 @@
+# Generic values for Shell/Host MFE applications
+# This file provides sensible defaults for MFE host applications
+# Project-specific values should override these settings
+
+replicaCount: 2
+
+image:
+  repository: nginx
+  pullPolicy: IfNotPresent
+  tag: ""
+
+imagePullSecrets:
+  - name: ghcr-secret
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: ""
+
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "80"
+  prometheus.io/path: "/metrics"
+
+podLabels:
+  app.kubernetes.io/role: "shell"
+  app.kubernetes.io/component: "frontend"
+
+podSecurityContext:
+  fsGroup: 101  # nginx group
+
+securityContext:
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: false
+  runAsNonRoot: true
+  runAsUser: 101  # nginx user
+  allowPrivilegeEscalation: false
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 80
+
+# Gateway/HTTPRoute configuration for Traefik
+gateway:
+  enabled: true
+  annotations:
+    traefik.io/router.entrypoints: websecure
+  parentRefs:
+    - name: traefik-gateway
+      namespace: traefik
+      sectionName: websecure
+  hostnames: []
+    # Override in project-specific values:
+    # - "smart-management.vitorafgomes.net"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+
+resources:
+  limits:
+    cpu: 200m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+# Health checks for Shell applications
+healthCheck:
+  liveness:
+    enabled: true
+    path: /health
+    initialDelaySeconds: 15
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+
+  readiness:
+    enabled: true
+    path: /health
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    timeoutSeconds: 5
+    failureThreshold: 3
+
+autoscaling:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+# ConfigMap for runtime configuration
+configMap:
+  enabled: true
+  data: {}
+    # Override in project-specific values:
+    # MFE_TENANT_URL: "http://mfe-tenant-settings.smart-management.svc.cluster.local"
+    # MFE_USERS_URL: "http://mfe-users.smart-management.svc.cluster.local"
+
+# Additional environment variables
+env: []
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/role: shell
+          topologyKey: kubernetes.io/hostname
+
+# Monitoring Configuration
+monitoring:
+  enabled: true
+  serviceMonitor:
+    enabled: false
+    interval: 30s
+    scrapeTimeout: 10s
+    path: /metrics
+    labels:
+      release: kps
+
+# mTLS Configuration for internal communication
+mtls:
+  enabled: false
+  containerPort: 8443
+  servicePort: 443
+
+  ca:
+    commonName: "Smart Management Root CA"
+    issuerName: selfsigned-issuer
+    issuerKind: ClusterIssuer
+    duration: 87600h  # 10 years
+    renewBefore: 8760h  # 1 year
+
+  server:
+    commonName: "shell-server"
+    dnsNames: []
+      # Override in project-specific values:
+      # - shell.smart-management.svc.cluster.local
+    ipAddresses: []
+    duration: 2160h  # 90 days
+    renewBefore: 720h  # 30 days
+
+  client:
+    commonName: "shell-client"
+    duration: 2160h  # 90 days
+    renewBefore: 720h  # 30 days

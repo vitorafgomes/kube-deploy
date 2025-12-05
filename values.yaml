@@ -163,3 +163,11 @@ healthCheck:
     periodSeconds: 5
     timeoutSeconds: 5
     failureThreshold: 3
+
+# KEDA Configuration (optional)
+keda:
+  enabled: false
+  triggerAuthentication:
+    enabled: false
+  secret:
+    create: false

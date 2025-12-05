@@ -1,0 +1,80 @@
+{{- if and .Values.keda.enabled .Values.keda.triggerAuthentication }}
+{{- if .Values.keda.triggerAuthentication.enabled }}
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: {{ .Values.keda.triggerAuthentication.name | default (printf "%s-trigger-auth" (include "kube-deploy.fullname" .)) }}
+  labels:
+    {{- include "kube-deploy.labels" . | nindent 4 }}
+spec:
+  {{- if .Values.keda.triggerAuthentication.secretTargetRef }}
+  secretTargetRef:
+    {{- range .Values.keda.triggerAuthentication.secretTargetRef }}
+    - parameter: {{ .parameter }}
+      name: {{ .name }}
+      key: {{ .key }}
+    {{- end }}
+  {{- end }}
+  {{- if .Values.keda.triggerAuthentication.env }}
+  env:
+    {{- range .Values.keda.triggerAuthentication.env }}
+    - parameter: {{ .parameter }}
+      name: {{ .name }}
+      containerName: {{ .containerName | default "" }}
+    {{- end }}
+  {{- end }}
+  {{- if .Values.keda.triggerAuthentication.podIdentity }}
+  podIdentity:
+    provider: {{ .Values.keda.triggerAuthentication.podIdentity.provider }}
+    {{- if .Values.keda.triggerAuthentication.podIdentity.identityId }}
+    identityId: {{ .Values.keda.triggerAuthentication.podIdentity.identityId }}
+    {{- end }}
+  {{- end }}
+  {{- if .Values.keda.triggerAuthentication.hashiCorpVault }}
+  hashiCorpVault:
+    address: {{ .Values.keda.triggerAuthentication.hashiCorpVault.address }}
+    {{- if .Values.keda.triggerAuthentication.hashiCorpVault.namespace }}
+    namespace: {{ .Values.keda.triggerAuthentication.hashiCorpVault.namespace }}
+    {{- end }}
+    authentication: {{ .Values.keda.triggerAuthentication.hashiCorpVault.authentication }}
+    {{- if .Values.keda.triggerAuthentication.hashiCorpVault.role }}
+    role: {{ .Values.keda.triggerAuthentication.hashiCorpVault.role }}
+    {{- end }}
+    {{- if .Values.keda.triggerAuthentication.hashiCorpVault.mount }}
+    mount: {{ .Values.keda.triggerAuthentication.hashiCorpVault.mount }}
+    {{- end }}
+    {{- if .Values.keda.triggerAuthentication.hashiCorpVault.credential }}
+    credential:
+      {{- toYaml .Values.keda.triggerAuthentication.hashiCorpVault.credential | nindent 6 }}
+    {{- end }}
+    secrets:
+      {{- range .Values.keda.triggerAuthentication.hashiCorpVault.secrets }}
+      - parameter: {{ .parameter }}
+        key: {{ .key }}
+        path: {{ .path }}
+      {{- end }}
+  {{- end }}
+{{- end }}
+{{- end }}
+---
+{{- if and .Values.keda.enabled .Values.keda.secret }}
+{{- if .Values.keda.secret.create }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Values.keda.secret.name | default (printf "%s-keda-secret" (include "kube-deploy.fullname" .)) }}
+  labels:
+    {{- include "kube-deploy.labels" . | nindent 4 }}
+type: Opaque
+{{- if .Values.keda.secret.stringData }}
+stringData:
+  {{- toYaml .Values.keda.secret.stringData | nindent 2 }}
+{{- end }}
+{{- if .Values.keda.secret.data }}
+data:
+  {{- range $key, $value := .Values.keda.secret.data }}
+  {{ $key }}: {{ $value | b64enc }}
+  {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

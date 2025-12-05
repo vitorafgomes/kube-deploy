@@ -1,0 +1,171 @@
+# Generic values for Micro Frontend (MFE) applications
+# This file provides sensible defaults for remote MFE applications
+# Project-specific values should override these settings via --set flags
+
+replicaCount: 2
+
+image:
+  repository: nginx
+  pullPolicy: IfNotPresent
+  tag: ""
+
+imagePullSecrets:
+  - name: ghcr-secret
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: ""
+
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "80"
+  prometheus.io/path: "/metrics"
+
+podLabels:
+  app.kubernetes.io/role: "mfe"
+  app.kubernetes.io/component: "frontend"
+
+podSecurityContext:
+  fsGroup: 101  # nginx group
+
+securityContext:
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: false
+  runAsNonRoot: true
+  runAsUser: 101  # nginx user
+  allowPrivilegeEscalation: false
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 80
+
+# Gateway/HTTPRoute for MFE - disabled by default
+# MFEs are typically accessed internally via Kubernetes DNS
+# Enable if you need direct external access to a specific MFE
+gateway:
+  enabled: false
+  annotations: {}
+  parentRefs: []
+  hostnames: []
+  rules: []
+
+# Resources - MFEs are typically lighter than Shell
+resources:
+  limits:
+    cpu: 150m
+    memory: 192Mi
+  requests:
+    cpu: 50m
+    memory: 96Mi
+
+# Health checks for MFE applications
+healthCheck:
+  liveness:
+    enabled: true
+    path: /health
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+
+  readiness:
+    enabled: true
+    path: /health
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    timeoutSeconds: 5
+    failureThreshold: 3
+
+autoscaling:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 8
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+# ConfigMap for runtime configuration - typically not needed for MFEs
+configMap:
+  enabled: false
+  data: {}
+
+# Additional environment variables
+env: []
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/role: mfe
+          topologyKey: kubernetes.io/hostname
+
+# Monitoring Configuration
+monitoring:
+  enabled: true
+  serviceMonitor:
+    enabled: false
+    interval: 30s
+    scrapeTimeout: 10s
+    path: /metrics
+    labels:
+      release: kps
+
+# mTLS Configuration for internal communication
+mtls:
+  enabled: false
+  containerPort: 8443
+  servicePort: 443
+
+  ca:
+    commonName: "Smart Management Root CA"
+    issuerName: selfsigned-issuer
+    issuerKind: ClusterIssuer
+    duration: 87600h  # 10 years
+    renewBefore: 8760h  # 1 year
+
+  server:
+    commonName: "mfe-server"
+    dnsNames: []
+      # Override via --set:
+      # - mfe-tenant-settings.smart-management.svc.cluster.local
+    ipAddresses: []
+    duration: 2160h  # 90 days
+    renewBefore: 720h  # 30 days
+
+  client:
+    commonName: "mfe-client"
+    duration: 2160h  # 90 days
+    renewBefore: 720h  # 30 days
+
+# CORS Configuration hint for nginx
+# The actual CORS headers should be configured in the nginx.conf of the Docker image
+# This is just for documentation purposes
+cors:
+  enabled: true
+  allowOrigins:
+    - "*"
+  allowMethods:
+    - "GET"
+    - "HEAD"
+    - "OPTIONS"
+  allowHeaders:
+    - "Origin"
+    - "Accept"
+    - "Content-Type"
+  exposeHeaders:
+    - "Content-Length"
+  maxAge: 3600
