@@ -3,9 +3,9 @@ entries:
   kube-deploy:
   - apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-10-23T22:17:26.918321521Z"
+    created: "2025-12-05T09:35:01.460748965Z"
     description: A Helm chart for Kubernetes deployment automation
-    digest: 7f7eff68ce660cfd7852ee7bb813260593f80443aa56c924bc0c61b84172a562
+    digest: d9f199966ef13a848cfde7b46139c1ffac563ef7b3f7d53817f183b6c3955dfe
     keywords:
     - kubernetes
     - deployment
@@ -20,4 +20,4 @@ entries:
     urls:
     - https://vitorafgomes.github.io/kube-deploy/kube-deploy-0.1.0.tgz
     version: 0.1.0
-generated: "2025-10-23T22:17:26.917549987Z"
+generated: "2025-12-05T09:35:01.459936846Z"
